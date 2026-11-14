@@ -1,0 +1,61 @@
+# Local authentication and environment
+.env
+.env.*
+!.env.example
+*.pem
+*.pfx
+*.key
+*.token
+*.secrets.*
+.databrickscfg
+.azure/
+
+# Python environments and caches
+.venv/
+venv/
+env/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+*.egg-info/
+build/
+dist/
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Generated data, logs and local outputs
+source_data/
+**/source_data/
+data/
+*.csv
+*.parquet
+*.delta
+logs/
+*.log
+output/
+outputs/
+checkpoints/
+_schema/
+_schemas/
+
+# Databricks local bundle/runtime state
+.databricks/
+**/.databricks/
+**/.bundle/
+**/.databricks-connect/
+
+# Notebook state / temporary files
+.ipynb_checkpoints/
+*.tmp
+*.bak
+
+# Generated manifest (if not used by the project)
+manifest.mf
