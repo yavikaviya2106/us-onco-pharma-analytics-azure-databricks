@@ -1,0 +1,41 @@
+resources:
+  jobs:
+    bridge_layer_job:
+      name: 03_silver_bridge_layer_job_${bundle.target}
+      max_concurrent_runs: 1
+      queue:
+        enabled: true
+
+      tasks:
+        # ───────── 1. UTILS ─────────
+        - task_key: utils_get_max_reporting_date
+          notebook_task:
+            notebook_path: ../utils/get_max_reporting_date.ipynb
+
+        # ───────── 2. BRIDGES  ─────────
+        - task_key: bridge_hcp_hco_affln
+          depends_on: [{ task_key: utils_get_max_reporting_date }]
+          notebook_task:
+            notebook_path: ../silver/bridge/bridge_hcp_hco_affln.ipynb
+
+        - task_key: bridge_rep_terr_assignment
+          depends_on: [{ task_key: utils_get_max_reporting_date }]
+          notebook_task:
+            notebook_path: ../silver/bridge/bridge_rep_terr_assignment.ipynb
+
+        - task_key: bridge_zip_to_terr
+          depends_on: [{ task_key: utils_get_max_reporting_date }]
+          notebook_task:
+            notebook_path: ../silver/bridge/bridge_zip_to_terr.ipynb
+
+        # ───────── BRIDGE GATE: all bridges completed ─────────
+        - task_key: bridge_tables_done
+          depends_on:
+            - task_key: bridge_hcp_hco_affln
+            - task_key: bridge_rep_terr_assignment
+            - task_key: bridge_zip_to_terr
+          run_if: ALL_SUCCESS
+          condition_task:
+            op: EQUAL_TO
+            left: "1"
+            right: "1"

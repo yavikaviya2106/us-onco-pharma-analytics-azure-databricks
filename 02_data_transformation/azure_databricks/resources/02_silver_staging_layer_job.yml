@@ -1,0 +1,42 @@
+resources:
+  jobs:
+    staging_layer_job:                        
+      name: 02_silver_staging_layer_job_${bundle.target} 
+      max_concurrent_runs: 1
+      queue:
+        enabled: true
+
+      # Job parameters: passed to every task and land in the notebook widgets of the same name
+      parameters:
+        - name: catalog
+          default: onco_pharma_analytics
+        - name: bronze_schema
+          default: bronze
+        - name: silver_schema
+          default: silver
+
+      tasks:
+        # Outer task: a loop over the 28 table names
+        - task_key: stg_all_tables
+          for_each_task:
+            inputs: >-
+              ["stg_address_master", "stg_brand_details", "stg_call_activity",
+               "stg_call_detail", "stg_disease_details", "stg_drug_distribution_data",
+               "stg_email_activity", "stg_field_force_details", "stg_field_force_terr_assignment",
+               "stg_generic_details", "stg_hco_onekey", "stg_hcp_call_plan",
+               "stg_hcp_hco_affiliation", "stg_hcp_onekey", "stg_hcp_target_list",
+               "stg_hub_transactions", "stg_indication_details", "stg_key_messages",
+               "stg_market_details", "stg_med_eve_attendees", "stg_medical_events",
+               "stg_product_details", "stg_sample_disbursed", "stg_sku_details",
+               "stg_sp_transactions", "stg_terr_algn", "stg_xponent_data", "stg_zip_to_terr"]
+            concurrency: 4                        # 4 tables at the same time
+
+            # Inner task: runs once per table name above
+            task:
+              task_key: stg_one_table
+              max_retries: 1                      # retry a failed table once
+              min_retry_interval_millis: 60000    # wait 1 minute before retrying
+              notebook_task:
+                notebook_path: ../silver/staging/stg_foreach_tbl_run_nb.ipynb
+                base_parameters:
+                  table_name: "{{input}}"         # replaced by the current table name each iteration

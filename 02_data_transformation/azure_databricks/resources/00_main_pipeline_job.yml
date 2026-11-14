@@ -1,0 +1,86 @@
+resources:
+  jobs:
+    # Internal key (used by: databricks bundle run <key>, and ${resources.jobs.<key>.id})
+    main_pipeline_job:
+
+      # Name shown in Jobs & Pipelines (e.g. main_pipeline_dev)
+      name: 00_main_pipeline_${bundle.target}
+
+      # Only one run at a time; a second trigger waits in the queue instead of being skipped
+      max_concurrent_runs: 1
+      queue:
+        enabled: true
+
+      tasks:
+         # 1. Bronze Ingestion
+        - task_key: run_bronze_ingestion
+          run_job_task:
+            job_id: ${resources.jobs.bronze_layer_ingestion_job.id}
+
+        # 2. Bronze -> silver staging (28 tables)
+        - task_key: run_silver_stg_tables
+          depends_on: 
+            - task_key: run_bronze_ingestion
+          run_if: ALL_SUCCESS
+          run_job_task:
+            job_id: ${resources.jobs.staging_layer_job.id}
+
+        # 3. Bridges (only after staging succeeds)
+        - task_key: run_silver_bridge_tables
+          depends_on: 
+            - task_key: run_silver_stg_tables
+          run_if: ALL_SUCCESS
+          run_job_task:
+            job_id: ${resources.jobs.bridge_layer_job.id}
+        
+        # 4. Dimensions (only after bridges succeeds)
+        - task_key: run_silver_dim_tables
+          depends_on: 
+            - task_key: run_silver_bridge_tables
+          run_if: ALL_SUCCESS
+          run_job_task:
+            job_id: ${resources.jobs.dimension_layer_job.id}
+
+        # 5. Facts (only after dimensions succeeds)
+        - task_key: run_silver_fct_tables
+          depends_on: 
+            - task_key: run_silver_dim_tables
+          run_if: ALL_SUCCESS
+          run_job_task:
+            job_id: ${resources.jobs.fact_layer_job.id}
+
+        #  6. IDL (only after fact succeeds)
+        - task_key: run_silver_idl_tables
+          depends_on:
+            - task_key: run_silver_fct_tables
+          run_if: ALL_SUCCESS
+          run_job_task:
+            job_id: ${resources.jobs.idl_layer_job.id}
+
+        #  7. INT KPI (only after idl succeeds)
+        - task_key: run_gold_int_kpi_tables
+          depends_on:
+            - task_key: run_silver_idl_tables
+          run_if: ALL_SUCCESS
+          run_job_task:
+            job_id: ${resources.jobs.int_layer_job.id}
+
+        #  8. AGGREGATE (only after int succeeds)
+        - task_key: run_gold_aggregate_tables
+          depends_on:
+            - task_key: run_gold_int_kpi_tables
+          run_if: ALL_SUCCESS
+          run_job_task:
+            job_id: ${resources.jobs.aggregate_layer_job.id}
+
+      # No cluster defined -> runs on Serverless (what Free Edition uses)
+
+      # Daily schedule. (paused automatically in dev mode).
+      # schedule:
+      #   quartz_cron_expression: "0 0 6 * * ?"   # every day at 06:00
+      #   timezone_id: Asia/Kolkata
+
+      # Email when a run fails
+      # email_notifications:
+      #   on_failure:
+      #     - yavikaviya2106@gmail.com

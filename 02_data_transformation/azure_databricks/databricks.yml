@@ -1,0 +1,14 @@
+bundle:
+  name: onco_pharma_analytics          # Project deployment name
+ 
+include:
+  - resources/*.yml                 # Load the job definition(s) from resources/
+ 
+targets:                            # Target environment like dev,test,prod
+  dev:
+    default: true                   
+    mode: development               
+    # Turns on safe settings for personal development -> the job gets a name like [dev yavikaviya]
+    
+    workspace:
+      host: https://adb-7405615126819851.11.azuredatabricks.net/

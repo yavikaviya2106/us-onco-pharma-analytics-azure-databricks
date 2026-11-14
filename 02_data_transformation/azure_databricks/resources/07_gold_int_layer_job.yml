@@ -1,0 +1,69 @@
+resources:
+  jobs:
+    int_layer_job:
+      name: 07_gold_int_layer_job_${bundle.target}
+      max_concurrent_runs: 1
+      queue:
+        enabled: true
+
+      tasks:
+        # ───────── 1. INT Tables ─────────
+      - task_key: int_hcp_calls
+        notebook_task:
+          notebook_path: ../gold/intermediate_kpi/int_hcp_calls.ipynb
+
+      - task_key: int_hcp_emails
+        notebook_task:
+          notebook_path: ../gold/intermediate_kpi/int_hcp_emails.ipynb
+
+      - task_key: int_hcp_engagements
+        notebook_task:
+          notebook_path: ../gold/intermediate_kpi/int_hcp_engagements.ipynb
+
+      - task_key: int_hcp_med_events
+        notebook_task:
+          notebook_path: ../gold/intermediate_kpi/int_hcp_med_events.ipynb
+
+      - task_key: int_hcp_rx_metrics
+        notebook_task:
+          notebook_path: ../gold/intermediate_kpi/int_hcp_rx_metrics.ipynb
+
+      - task_key: int_hcp_units
+        notebook_task:
+          notebook_path: ../gold/intermediate_kpi/int_hcp_units.ipynb
+
+      - task_key: int_pdt_distribution
+        notebook_task:
+          notebook_path: ../gold/intermediate_kpi/int_pdt_distribution.ipynb
+
+      - task_key: int_ptnt_fills
+        notebook_task:
+          notebook_path: ../gold/intermediate_kpi/int_ptnt_fills.ipynb
+
+      - task_key: int_ptnt_therapy
+        notebook_task:
+          notebook_path: ../gold/intermediate_kpi/int_ptnt_therapy.ipynb
+
+      - task_key: int_ptnt_units
+        notebook_task:
+          notebook_path: ../gold/intermediate_kpi/int_ptnt_units.ipynb
+      
+      # ───────── 2. INT GATE: all int tables completed  ─────────
+      - task_key: int_tables_done
+        depends_on:
+        - task_key: int_hcp_calls
+        - task_key: int_hcp_emails
+        - task_key: int_hcp_engagements
+        - task_key: int_hcp_med_events
+        - task_key: int_hcp_rx_metrics
+        - task_key: int_hcp_units
+        - task_key: int_pdt_distribution
+        - task_key: int_ptnt_fills
+        - task_key: int_ptnt_therapy
+        - task_key: int_ptnt_units
+        
+        run_if: ALL_SUCCESS
+        condition_task:
+          op: EQUAL_TO
+          left: '1'
+          right: '1'

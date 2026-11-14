@@ -1,0 +1,15 @@
+resources:
+  jobs:
+    bronze_layer_ingestion_job:
+      name: 01_bronze_layer_ingestion_job_${bundle.target}
+      max_concurrent_runs: 1
+      queue:
+        enabled: true
+
+      tasks:
+        - task_key: ingest_into_bronze
+          notebook_task:
+            notebook_path: ../bronze/bronze_tables_ingestion.ipynb
+          max_retries: 2
+          min_retry_interval_millis: 60000       #One minute
+          retry_on_timeout: true

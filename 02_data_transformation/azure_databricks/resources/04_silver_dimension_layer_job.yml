@@ -1,0 +1,126 @@
+resources:
+  jobs:
+    dimension_layer_job:
+      name: 04_silver_dimension_layer_job_${bundle.target}
+      max_concurrent_runs: 1
+      queue:
+        enabled: true
+
+      tasks:
+        # ───────── 1. DIMENSIONS (no dim-to-dim dependency) ─────────
+        - task_key: dim_date
+          notebook_task:
+            notebook_path: ../silver/dimension/dim_date.ipynb
+
+        - task_key: dim_time_bucket
+          notebook_task:
+            notebook_path: ../silver/dimension/dim_time_bucket.ipynb
+
+        - task_key: dim_brand_details
+          notebook_task:
+            notebook_path: ../silver/dimension/dim_brand_details.ipynb
+
+        - task_key: dim_disease_details
+          notebook_task:
+            notebook_path: ../silver/dimension/dim_disease_details.ipynb
+
+        - task_key: dim_generic_details
+          notebook_task:
+            notebook_path: ../silver/dimension/dim_generic_details.ipynb
+
+        - task_key: dim_field_force_master
+          notebook_task:
+            notebook_path: ../silver/dimension/dim_field_force_master.ipynb
+
+        - task_key: dim_terr_algn
+          notebook_task:
+            notebook_path: ../silver/dimension/dim_terr_algn.ipynb
+
+        - task_key: dim_sku_details
+          notebook_task:
+            notebook_path: ../silver/dimension/dim_sku_details.ipynb
+
+        - task_key: dim_address_master
+          notebook_task:
+            notebook_path: ../silver/dimension/dim_address_master.ipynb
+
+        # ───────── 2. DIMENSIONS (depend on other dims) ────────
+        - task_key: dim_hco_master
+          depends_on:
+            - task_key: dim_address_master
+          notebook_task:
+            notebook_path: ../silver/dimension/dim_hco_master.ipynb
+
+        - task_key: dim_hcp_master
+          depends_on:
+            - task_key: dim_hco_master
+          notebook_task:
+            notebook_path: ../silver/dimension/dim_hcp_master.ipynb
+
+        - task_key: dim_indication_details
+          depends_on:
+            - task_key: dim_brand_details
+            - task_key: dim_generic_details
+            - task_key: dim_disease_details
+          notebook_task:
+            notebook_path: ../silver/dimension/dim_indication_details.ipynb
+
+        - task_key: dim_market_details
+          depends_on:
+            - task_key: dim_brand_details
+            - task_key: dim_generic_details
+          notebook_task:
+            notebook_path: ../silver/dimension/dim_market_details.ipynb
+
+        - task_key: dim_product_details
+          depends_on:
+            - task_key: dim_brand_details
+            - task_key: dim_generic_details
+            - task_key: dim_sku_details
+          notebook_task:
+            notebook_path: ../silver/dimension/dim_product_details.ipynb
+
+        - task_key: dim_key_msg_master
+          depends_on:
+            - task_key: dim_product_details
+          notebook_task:
+            notebook_path: ../silver/dimension/dim_key_msg_master.ipynb
+
+        - task_key: dim_med_events
+          depends_on:
+            - task_key: dim_product_details
+            - task_key: dim_indication_details
+          notebook_task:
+            notebook_path: ../silver/dimension/dim_med_events.ipynb
+
+        - task_key: dim_product_ltd_bucket
+          depends_on: 
+            - task_key: dim_product_details
+          notebook_task:
+            notebook_path: ../silver/dimension/dim_product_ltd_bucket.ipynb
+
+      # ───────── 3. DIMENSION GATE: all dim tables completed ─────────
+        - task_key: dim_tables_done
+          depends_on:
+            - task_key: dim_date
+            - task_key: dim_time_bucket
+            - task_key: dim_brand_details
+            - task_key: dim_disease_details
+            - task_key: dim_generic_details
+            - task_key: dim_field_force_master
+            - task_key: dim_terr_algn
+            - task_key: dim_sku_details
+            - task_key: dim_address_master
+            - task_key: dim_hco_master
+            - task_key: dim_hcp_master
+            - task_key: dim_indication_details
+            - task_key: dim_market_details
+            - task_key: dim_product_details
+            - task_key: dim_key_msg_master
+            - task_key: dim_med_events
+            - task_key: dim_product_ltd_bucket
+          run_if: ALL_SUCCESS
+          condition_task:
+            op: EQUAL_TO
+            left: "1"
+            right: "1"

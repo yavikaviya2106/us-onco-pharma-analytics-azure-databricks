@@ -1,0 +1,44 @@
+resources:
+  jobs:
+    aggregate_layer_job:
+      name: 08_gold_aggregate_layer_job_${bundle.target}
+      max_concurrent_runs: 1
+      queue:
+        enabled: true
+
+      tasks:
+       # ───────── 1. AGG Tables ─────────
+      - task_key: agg_hcp_performance
+        notebook_task:
+          notebook_path: ../gold/aggregate/agg_hcp_performance.ipynb
+
+      - task_key: agg_prod_mvmt_dtl
+        notebook_task:
+          notebook_path: ../gold/aggregate/agg_prod_mvmt_dtl.ipynb
+
+      - task_key: agg_ptnt_journey
+        notebook_task:
+          notebook_path: ../gold/aggregate/agg_ptnt_journey.ipynb
+
+      - task_key: agg_ptnt_period_performance
+        notebook_task:
+          notebook_path: ../gold/aggregate/agg_ptnt_period_performance.ipynb
+
+      - task_key: agg_territory_performance
+        notebook_task:
+          notebook_path: ../gold/aggregate/agg_territory_performance.ipynb
+
+       # ───────── 2. AGG GATE: all agg tables completed  ───────── 
+      - task_key: agg_tables_done
+        depends_on:
+        - task_key: agg_hcp_performance
+        - task_key: agg_prod_mvmt_dtl
+        - task_key: agg_ptnt_journey
+        - task_key: agg_ptnt_period_performance
+        - task_key: agg_territory_performance
+          
+        run_if: ALL_SUCCESS
+        condition_task:
+          op: EQUAL_TO
+          left: '1'
+          right: '1'

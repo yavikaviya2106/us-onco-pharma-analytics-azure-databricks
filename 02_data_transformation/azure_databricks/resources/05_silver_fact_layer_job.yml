@@ -1,0 +1,83 @@
+resources:
+  jobs:
+    fact_layer_job:
+      name: 05_silver_fact_layer_job_${bundle.target}
+      tasks:
+         # ───────── 1. FACTS (no fct-to-fct dependency) ─────────
+        - task_key: fct_call_activity
+          notebook_task:
+            notebook_path: ../silver/fact/fct_call_activity.sql
+
+        - task_key: fct_hcp_call_plan
+          notebook_task:
+            notebook_path: ../silver/fact/fct_hcp_call_plan.sql
+
+        - task_key: fct_hcp_tgt_list
+          notebook_task:
+            notebook_path: ../silver/fact/fct_hcp_tgt_list.sql
+
+        - task_key: fct_hub_transactions
+          notebook_task:
+            notebook_path: ../silver/fact/fct_hub_transactions.sql
+
+        - task_key: fct_med_eve_attendees
+          notebook_task:
+            notebook_path: ../silver/fact/fct_med_eve_attendees.sql
+
+        - task_key: fct_med_events    
+          notebook_task:
+            notebook_path: ../silver/fact/fct_med_events.sql
+
+        - task_key: fct_pdt_distribution   
+          notebook_task:
+            notebook_path: ../silver/fact/fct_pdt_distribution.sql
+
+        - task_key: fct_rx_sales    
+          notebook_task:
+            notebook_path: ../silver/fact/fct_rx_sales.sql
+
+        - task_key: fct_sp_transactions   
+          notebook_task:
+            notebook_path: ../silver/fact/fct_sp_transactions.sql
+
+        # ───────── 2. FACTS (depend on other facts) ────────
+        - task_key: fct_call_detail
+          depends_on:
+            - task_key: fct_call_activity
+          notebook_task:
+            notebook_path: ../silver/fact/fct_call_detail.sql
+
+        - task_key: fct_email_activity
+          depends_on:
+            - task_key: fct_call_activity
+          notebook_task:
+            notebook_path: ../silver/fact/fct_email_activity.sql
+
+        - task_key: fct_sample_disbursed
+          depends_on:
+            - task_key: fct_call_activity
+            - task_key: fct_call_detail
+          notebook_task:
+            notebook_path: ../silver/fact/fct_sample_disbursed.sql
+
+         # ───────── 3. FACTS GATE: all fct tables completed ─────────
+        - task_key: fact_tables_done
+          depends_on:
+            - task_key: fct_call_activity
+            - task_key: fct_hcp_call_plan
+            - task_key: fct_hcp_tgt_list
+            - task_key: fct_hub_transactions
+            - task_key: fct_med_eve_attendees
+            - task_key: fct_med_events
+            - task_key: fct_pdt_distribution
+            - task_key: fct_rx_sales
+            - task_key: fct_sp_transactions
+            - task_key: fct_call_detail
+            - task_key: fct_email_activity
+            - task_key: fct_sample_disbursed
+
+          run_if: ALL_SUCCESS
+          condition_task:
+            op: EQUAL_TO
+            left: "1"
+            right: "1"

@@ -1,0 +1,61 @@
+resources:
+  jobs:
+    idl_layer_job:
+      name: 06_silver_idl_layer_job_${bundle.target}
+      max_concurrent_runs: 1
+      queue:
+        enabled: true
+
+      tasks: 
+       # ───────── 1. IDL (no idl-to-idl dependency) ─────────
+        - task_key: idl_call_activity
+          notebook_task:
+            notebook_path: ../silver/intermediate_data/idl_call_activity.ipynb
+
+        - task_key: idl_hcp_details
+          notebook_task:
+            notebook_path: ../silver/intermediate_data/idl_hcp_details.ipynb
+
+        - task_key: idl_pdt_distribution
+          notebook_task:
+            notebook_path: ../silver/intermediate_data/idl_pdt_distribution.ipynb
+
+        - task_key: idl_ptnt_cases
+          notebook_task:
+            notebook_path: ../silver/intermediate_data/idl_ptnt_cases.ipynb
+
+        - task_key: idl_ptnt_txn_units
+          notebook_task:
+            notebook_path: ../silver/intermediate_data/idl_ptnt_txn_units.ipynb
+
+        # ───────── 2. IDL (depend on other idl tables) ────────
+        - task_key: idl_hcp_touchpoints
+          depends_on:
+            - task_key: idl_call_activity
+          notebook_task:
+            notebook_path: ../silver/intermediate_data/idl_hcp_touchpoints.ipynb
+
+        - task_key: idl_ptnt_jrny
+          depends_on:
+            - task_key: idl_ptnt_cases
+            - task_key: idl_ptnt_txn_units
+          notebook_task:
+            notebook_path: ../silver/intermediate_data/idl_ptnt_jrny.ipynb
+
+        
+        # ───────── 3. IDL GATE: all idl tables completed  ─────────
+        - task_key: idl_tables_done
+          depends_on:
+            - task_key: idl_call_activity
+            - task_key: idl_hcp_details
+            - task_key: idl_hcp_touchpoints
+            - task_key: idl_pdt_distribution
+            - task_key: idl_ptnt_cases
+            - task_key: idl_ptnt_txn_units
+            - task_key: idl_ptnt_jrny
+
+          run_if: ALL_SUCCESS
+          condition_task:
+            op: EQUAL_TO
+            left: "1"
+            right: "1"
