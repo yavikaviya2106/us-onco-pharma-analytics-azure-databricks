@@ -31,13 +31,7 @@ dist/
 .DS_Store
 Thumbs.db
 
-# Generated data, logs and local outputs
-source_data/
-**/source_data/
-data/
-*.csv
-*.parquet
-*.delta
+# Generated logs and local outputs
 logs/
 *.log
 output/
